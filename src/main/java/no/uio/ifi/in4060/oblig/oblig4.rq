@@ -1,0 +1,13 @@
+PREFIX sim: <http://www.ifi.uio.no/IN3060/simpsons#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX fam: <http://www.ifi.uio.no/IN3060/family#>
+
+CONSTRUCT {
+    sim:Homer foaf:knows ?person .
+}
+WHERE {
+    ?person a foaf:Person .
+    { ?person fam:isRelativeOf sim:Homer . }
+    UNION
+    { sim:Homer fam:isRelativeOf ?person . }
+}
