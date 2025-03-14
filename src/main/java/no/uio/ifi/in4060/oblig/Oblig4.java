@@ -20,9 +20,15 @@ public class Oblig4 {
     private static final StringBuilder stringBuilder = new StringBuilder();
 
     public static void main(String[] args) {
-        if (args.length != 3) throw new IllegalArgumentException(
-                "🚫 Illegal arguments: please provide:\n1: path to the RDF file\n2: path to the SPARQL construct query\n3: output file name"
-        );
+        if (args.length != 3) {
+            System.err.println(
+                    "🚫 Illegal arguments: please provide\n\t" +
+                    "1: path to the RDF file\n\t" +
+                    "2: path to the SPARQL construct query\n\t" +
+                    "3: output file name"
+            );
+            System.exit(1);
+        }
 
         String arg1 = args[0]; // path to the file your have written in the first exercise, RDFS modelling
         String arg2 = args[1]; // path to your SPARQL construct query
@@ -35,13 +41,17 @@ public class Oblig4 {
         String queryPath = absolutePath + arg2;
         String outputPath = absolutePath + arg3;
 
-        if (!isValidFileExtension(dataPath) || !isValidFileExtension(schemaPath)) throw new IllegalArgumentException(
-                "🚫 Illegal arguments: RDF file and output file must be of type .rdf, .ttl, .n3 or .nt"
-        );
-
-        if (!queryPath.endsWith(".rq")) throw new IllegalArgumentException(
-                "🚫 Illegal arguments: SPARQL construct query file must be of type .rq"
-        );
+        try {
+            if (isNotValidFileExtension(dataPath) || isNotValidFileExtension(schemaPath)) throw new IllegalArgumentException(
+                    "🚫 Illegal arguments: RDF file and output file must be of type .rdf, .ttl, .n3 or .nt"
+            );
+            if (!queryPath.endsWith(".rq")) throw new IllegalArgumentException(
+                    "🚫 Illegal arguments: SPARQL construct query file must be of type .rq"
+            );
+        } catch (IllegalArgumentException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
 
         try {
             System.out.println("ℹ️ Testing...");
@@ -61,11 +71,11 @@ public class Oblig4 {
     }
 
     private static void writeOutputResults(String path) {
-        System.out.println("ℹ️ Writing output results...");
+        System.out.println("\nℹ️ Writing output results...");
         try (FileOutputStream writer = new FileOutputStream(path)) {
             // redundant to set serialization language again for the arguments I use (both are turtle),
             // but setting it again just in case the teacher changes the arguments
-            setSerializationLanguage(path);
+            setSerializationLanguage(path, "");
 
             resultModel.write(writer, serializationLanguage);
             System.out.println("✅ Success!");
@@ -75,7 +85,7 @@ public class Oblig4 {
     }
 
     private static void executeQuery() {
-        System.out.println("ℹ️ Executing query...");
+        System.out.println("\nℹ️ Executing query...");
         try (QueryExecution queryExecution = QueryExecutionFactory.create(query, combinedModel)) {
             resultModel = queryExecution.execConstruct();
             System.out.println("✅ Success!");
@@ -85,7 +95,7 @@ public class Oblig4 {
     }
 
     private static void initQuery(String path) {
-        System.out.println("ℹ️ Initiating query...");
+        System.out.println("\nℹ️ Initiating query...");
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             stringBuilder.setLength(0); // reset just in case
             String queryString;
@@ -106,7 +116,7 @@ public class Oblig4 {
     private static Model getModel(String uri) throws FileNotFoundException {
         System.out.println("\tℹ️ Getting model with uri: " + uri);
         Model model = ModelFactory.createDefaultModel();
-        setSerializationLanguage(uri);
+        setSerializationLanguage(uri, "\t");
 
         if (uri.startsWith("http")) {
             model.read(uri, null, serializationLanguage);
@@ -120,7 +130,7 @@ public class Oblig4 {
     }
 
     private static void initCombinedModel(String schemeURI, String dataURI) {
-        System.out.println("ℹ️ Initiating inferred model combined by schema and data model...");
+        System.out.println("\nℹ️ Initiating inferred model combined by schema and data model...");
         try {
             Model schema = getModel(schemeURI);
             Model data = getModel(dataURI);
@@ -132,7 +142,7 @@ public class Oblig4 {
         }
     }
 
-    private static void setSerializationLanguage(String uri) {
+    private static void setSerializationLanguage(String uri, String pad) {
         if (uri.endsWith(".rdf")) {
             serializationLanguage = "RDF/XML";
         } else if (uri.endsWith(".ttl")) {
@@ -144,7 +154,7 @@ public class Oblig4 {
         } else throw new Error(
                 "🚫 Error getting serialization language, supported formats are: .rdf (RDF/XML), .ttl (TURTLE), .n3 (N-TRIPLE), .nt (N-TRIPLE)"
         );
-        System.out.println("ℹ️ Using serialization language: " + serializationLanguage);
+        System.out.println(pad + "ℹ️ Using serialization language: " + serializationLanguage);
     }
 
     /**
@@ -152,9 +162,9 @@ public class Oblig4 {
      * @param fileName The file name to check.
      * @return True if the file extension is valid, false otherwise.
      */
-    private static boolean isValidFileExtension(String fileName) {
+    private static boolean isNotValidFileExtension(String fileName) {
         List<String> allowedFileExtensions = Arrays.asList(".rdf", ".ttl", ".n3", ".nt");
-        return allowedFileExtensions.stream().anyMatch(fileName::endsWith);
+        return allowedFileExtensions.stream().noneMatch(fileName::endsWith);
     }
 
     private static void testListStatements(String name, List<String> statements) {
