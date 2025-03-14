@@ -196,11 +196,6 @@ public class Oblig4 {
         }
     }
 
-    /**
-     * Checks if the provided file name has a valid RDF serialization format extension.
-     * @param fileName The file name to check.
-     * @return True if the file extension is valid, false otherwise.
-     */
     private static boolean isNotValidFileExtension(String fileName) {
         List<String> allowedFileExtensions = Arrays.asList(".rdf", ".ttl", ".n3", ".nt");
         return allowedFileExtensions.stream().noneMatch(fileName::endsWith);
