@@ -7,6 +7,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 // TODO: we use non-unique name assumption in semantic web, so task 2.9 IS ENTAILED -> CHANGE IT!!!
 // TODO: write down in your notes the definitions and differences of soundness and completeness (it will be on the exam)
@@ -17,9 +18,18 @@ public class Oblig4 {
     private static Model resultModel;
     private static InfModel combinedModel;
     private static String serializationLanguage;
+
+    private static String schemaPath;
+    private static String queryPath;
+    private static String outputPath;
+
     private static final StringBuilder stringBuilder = new StringBuilder();
+    private static final String absolutePath = System.getProperty("user.dir") + "/src/main/java/no/uio/ifi/in4060/oblig/";
+    private static final String dataPath = "https://www.uio.no/studier/emner/matnat/ifi/IN3060/v23/obliger/simpsons.ttl";
 
     public static void main(String[] args) {
+        System.out.println("👋🏼 Welcome! We will find all people Homer Simpson has a family relation to... Now watch the magic 🧚🏼✨\n");
+
         if (args.length != 3) {
             System.err.println(
                     "🚫 Illegal arguments: please provide\n\t" +
@@ -35,11 +45,10 @@ public class Oblig4 {
         String arg3 = args[2]; // file name to where the results of the SPARQL query shall be written
         System.out.println("ℹ️ Running program with arguments: " + arg1 + ", " + arg2 + " and " + arg3);
 
-        String absolutePath = System.getProperty("user.dir") + "/src/main/java/no/uio/ifi/in4060/oblig/";
-        String dataPath = "https://www.uio.no/studier/emner/matnat/ifi/IN3060/v23/obliger/simpsons.ttl";
-        String schemaPath = absolutePath + arg1;
-        String queryPath = absolutePath + arg2;
-        String outputPath = absolutePath + arg3;
+        schemaPath = absolutePath + arg1;
+        queryPath = absolutePath + arg2;
+        outputPath = absolutePath + arg3;
+        validatePaths(arg1, arg2, arg3);
 
         try {
             if (isNotValidFileExtension(dataPath) || isNotValidFileExtension(schemaPath)) throw new IllegalArgumentException(
@@ -68,6 +77,7 @@ public class Oblig4 {
         initQuery(queryPath);
         executeQuery();
         writeOutputResults(outputPath);
+        System.out.println("\n☺️All done! You can go check the generated FOAF file for Homer Simpson at: " + outputPath);
     }
 
     private static void writeOutputResults(String path) {
@@ -138,7 +148,7 @@ public class Oblig4 {
             combinedModel = ModelFactory.createRDFSModel(schema, data);
             System.out.println("✅ Success!");
         } catch (FileNotFoundException e) {
-            throw new Error("🚫 Error reading RDF file: " + e.getMessage());
+            throw new Error("\n🚫 Error reading file: " + e.getMessage() + "\n➡️ Make sure you are in the right directory");
         }
     }
 
@@ -155,6 +165,35 @@ public class Oblig4 {
                 "🚫 Error getting serialization language, supported formats are: .rdf (RDF/XML), .ttl (TURTLE), .n3 (N-TRIPLE), .nt (N-TRIPLE)"
         );
         System.out.println(pad + "ℹ️ Using serialization language: " + serializationLanguage);
+    }
+
+    private static void validatePaths(String arg1, String arg2, String arg3) {
+        Scanner scanner = new Scanner(System.in);
+        boolean valid = false;
+
+        while (!valid) {
+            System.out.println(
+                    "ℹ️The program has interpreted the following paths:" +
+                            "\n\t1. RDF schema file: " + schemaPath +
+                            "\n\t2. SPARQL construct query: " + queryPath +
+                            "\n\t3. Output results file: " + outputPath +
+                            "\n\t➡️ Is this correct? (y/n)"
+            );
+
+            String answer = scanner.nextLine();
+            if (answer.equalsIgnoreCase("y")) {
+                System.out.println("\tYou answered 'yes', proceeding program execution...");
+                valid = true;
+            } else if (answer.equalsIgnoreCase("n")) {
+                System.out.println("\tYou answered 'no', removing absolute paths...");
+                schemaPath = arg1;
+                queryPath = arg2;
+                outputPath = arg3;
+            } else {
+                System.out.println("\tInput not recognized, change program arguments and try again...");
+                System.exit(1);
+            }
+        }
     }
 
     /**
