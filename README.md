@@ -1,0 +1,1 @@
+> Run program using arguments ``family.ttl oblig4.rq output.ttl``
