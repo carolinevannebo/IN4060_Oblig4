@@ -5,22 +5,23 @@ import org.apache.jena.rdf.model.*;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-/** In this exercise you shall write a java program and a SPARQL CONSTRUCT query.
- * The SPARQL query is similar to a query you made for the previous mandatory exercise set:
- * it shall produce a FOAF file for Homer Simpson where he foaf:knows all foaf:Person-s he has a family relation to (fam:isRelativeOf).
- *
- */
+// TODO: we use non-unique name assumption in semantic web, so task 2.9 IS ENTAILED -> CHANGE IT!!!
+// TODO: write down in your notes the definitions and differences of soundness and completeness (it will be on the exam)
+// entailment and inference are two different things
+
 public class Oblig4 {
     private static Query query;
     private static Model resultModel;
     private static InfModel combinedModel;
+    private static String serializationLanguage;
     private static final StringBuilder stringBuilder = new StringBuilder();
 
     public static void main(String[] args) {
         if (args.length != 3) throw new IllegalArgumentException(
-                "🚫 Missing arguments, please provide:\n1: path to the RDF file\n2: path to the SPARQL construct query\n3: output file name"
+                "🚫 Illegal arguments: please provide:\n1: path to the RDF file\n2: path to the SPARQL construct query\n3: output file name"
         );
 
         String arg1 = args[0]; // path to the file your have written in the first exercise, RDFS modelling
@@ -33,7 +34,14 @@ public class Oblig4 {
         String schemaPath = absolutePath + arg1;
         String queryPath = absolutePath + arg2;
         String outputPath = absolutePath + arg3;
-        // TODO: validation
+
+        if (!isValidFileExtension(dataPath) || !isValidFileExtension(schemaPath)) throw new IllegalArgumentException(
+                "🚫 Illegal arguments: RDF file and output file must be of type .rdf, .ttl, .n3 or .nt"
+        );
+
+        if (!queryPath.endsWith(".rq")) throw new IllegalArgumentException(
+                "🚫 Illegal arguments: SPARQL construct query file must be of type .rq"
+        );
 
         try {
             System.out.println("ℹ️ Testing...");
@@ -42,7 +50,8 @@ public class Oblig4 {
             testListStatements("Family", familyStatements);
             testListStatements("Simpsons", simpsonsStatements);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            System.err.println("🚫 Something wrong happened while testing statements: " + e.getMessage());
+            System.err.println("👁️👁️ But we don't really care about that 💅🏼 moving on ✨");
         }
 
         initCombinedModel(schemaPath, dataPath);
@@ -54,8 +63,11 @@ public class Oblig4 {
     private static void writeOutputResults(String path) {
         System.out.println("ℹ️ Writing output results...");
         try (FileOutputStream writer = new FileOutputStream(path)) {
-            resultModel.write(writer, "TURTLE");
-            // I have checked that output is successfully written ✅
+            // redundant to set serialization language again for the arguments I use (both are turtle),
+            // but setting it again just in case the teacher changes the arguments
+            setSerializationLanguage(path);
+
+            resultModel.write(writer, serializationLanguage);
             System.out.println("✅ Success!");
         } catch (IOException e) {
             throw new Error("🚫 Error writing output query results to file: " + e.getMessage());
@@ -86,7 +98,6 @@ public class Oblig4 {
             queryString = stringBuilder.toString();
             query = QueryFactory.create(queryString);
             System.out.println("✅ Success!");
-            // I have logged that query is created and correct
         } catch (IOException e) {
             throw new Error("🚫 Error reading SPARQL file: " + e.getMessage());
         }
@@ -95,16 +106,16 @@ public class Oblig4 {
     private static Model getModel(String uri) throws FileNotFoundException {
         System.out.println("\tℹ️ Getting model with uri: " + uri);
         Model model = ModelFactory.createDefaultModel();
+        setSerializationLanguage(uri);
 
         if (uri.startsWith("http")) {
-            model.read(uri, null, "TURTLE");
+            model.read(uri, null, serializationLanguage);
         } else {
             InputStream inputStream = new FileInputStream(uri);
-            model.read(inputStream, null, "TURTLE");
+            model.read(inputStream, null, serializationLanguage);
         }
 
         System.out.println("\t✅ Success!");
-        // I have logged that namespaces exist
         return model;
     }
 
@@ -113,13 +124,37 @@ public class Oblig4 {
         try {
             Model schema = getModel(schemeURI);
             Model data = getModel(dataURI);
-            // I have logged that we get the models ✅
+
             combinedModel = ModelFactory.createRDFSModel(schema, data);
             System.out.println("✅ Success!");
         } catch (FileNotFoundException e) {
             throw new Error("🚫 Error reading RDF file: " + e.getMessage());
         }
-        // I have logged that namespaces are correct, and I am getting resources
+    }
+
+    private static void setSerializationLanguage(String uri) {
+        if (uri.endsWith(".rdf")) {
+            serializationLanguage = "RDF/XML";
+        } else if (uri.endsWith(".ttl")) {
+            serializationLanguage = "TURTLE";
+        } else if (uri.endsWith(".n3")) {
+            serializationLanguage = "N3";
+        } else if (uri.endsWith(".nt")) {
+            serializationLanguage = "N-TRIPLE";
+        } else throw new Error(
+                "🚫 Error getting serialization language, supported formats are: .rdf (RDF/XML), .ttl (TURTLE), .n3 (N-TRIPLE), .nt (N-TRIPLE)"
+        );
+        System.out.println("ℹ️ Using serialization language: " + serializationLanguage);
+    }
+
+    /**
+     * Checks if the provided file name has a valid RDF serialization format extension.
+     * @param fileName The file name to check.
+     * @return True if the file extension is valid, false otherwise.
+     */
+    private static boolean isValidFileExtension(String fileName) {
+        List<String> allowedFileExtensions = Arrays.asList(".rdf", ".ttl", ".n3", ".nt");
+        return allowedFileExtensions.stream().anyMatch(fileName::endsWith);
     }
 
     private static void testListStatements(String name, List<String> statements) {
@@ -146,7 +181,6 @@ public class Oblig4 {
 
                 stringBuilder.append(line).append(" ");
                 if (line.endsWith(".")) { // statement done
-                    // add complete statement to the list, check: trim to remove any extra whitespace?
                     statements.add(stringBuilder.toString());
                     stringBuilder.setLength(0); // reset for the next statement
                 }
