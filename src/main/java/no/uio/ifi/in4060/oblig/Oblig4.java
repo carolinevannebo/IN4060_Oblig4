@@ -9,10 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
-// TODO: we use non-unique name assumption in semantic web, so task 2.9 IS ENTAILED -> CHANGE IT!!!
-// TODO: write down in your notes the definitions and differences of soundness and completeness (it will be on the exam)
-// entailment and inference are two different things
-
 public class Oblig4 {
     private static Query query;
     private static Model resultModel;
